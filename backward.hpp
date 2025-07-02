@@ -4345,7 +4345,7 @@ private:
 class SignalHandling {
 public:
   SignalHandling(const std::vector<int> & = std::vector<int>())
-      : reporter_thread_([]() {
+      : reporter_thread_([this]() {
           /* We handle crashes in a utility thread:
             backward structures and some Windows functions called here
             need stack space, which we do not have when we encounter a
@@ -4381,7 +4381,7 @@ public:
   }
   bool loaded() const { return true; }
 
-  ~SignalHandling() {
+  virtual ~SignalHandling() {
     {
       std::unique_lock<std::mutex> lk(mtx());
       crashed() = crash_status::normal_exit;
@@ -4392,7 +4392,7 @@ public:
     reporter_thread_.join();
   }
 
-private:
+protected:
   static CONTEXT *ctx() {
     static CONTEXT data;
     return &data;
@@ -4492,8 +4492,8 @@ private:
       cv().wait(lk, [] { return crashed() != crash_status::crashed; });
     }
   }
-
-  static void handle_stacktrace(int skip_frames = 0) {
+protected:
+  virtual void handle_stacktrace(int skip_frames) {
     // printer creates the TraceResolver, which can supply us a machine type
     // for stack walking. Without this, StackTrace can only guess using some
     // macros.
@@ -4508,7 +4508,11 @@ private:
     st.skip_n_firsts(skip_frames);
 
     printer.address = true;
-    printer.print(st, std::cerr);
+    printer.print(st, stream());
+  }
+
+  virtual std::ostream & stream() {
+      return std::cerr;
   }
 };
 
