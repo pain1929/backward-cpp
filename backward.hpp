@@ -4508,12 +4508,14 @@ protected:
     st.skip_n_firsts(skip_frames);
 
     printer.address = true;
-    printer.print(st, stream());
+    print_stacktrace(printer , st);
+
   }
 
-  virtual std::ostream & stream() {
-      return std::cerr;
+  virtual void print_stacktrace(Printer & printer , StackTrace & st) {
+      printer.print(st, std::cerr);
   }
+
 };
 
 #endif // BACKWARD_SYSTEM_WINDOWS
